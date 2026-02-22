@@ -1,11 +1,11 @@
 {
-  "name": "telegram-notify-mcp",
+  "name": "@parthj/telegram-notify-mcp",
   "version": "1.0.0",
   "description": "A dead-simple MCP server with one job: send AI agent progress back to you on Telegram — text, images, or files.",
   "type": "module",
   "main": "./build/index.js",
   "bin": {
-    "telegram-notify-mcp": "./build/index.js"
+    "@parthj/telegram-notify-mcp": "./build/index.js"
   },
   "files": [
     "build",
@@ -32,12 +32,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ParthJadhav/telegram-mcp.git"
+    "url": "git+https://github.com/ParthJadhav/telegram-notify-mcp.git"
   },
   "bugs": {
-    "url": "https://github.com/ParthJadhav/telegram-mcp/issues"
+    "url": "https://github.com/ParthJadhav/telegram-notify-mcp/issues"
   },
-  "homepage": "https://github.com/ParthJadhav/telegram-mcp#readme",
+  "homepage": "https://github.com/ParthJadhav/telegram-notify-mcp#readme",
   "engines": {
     "node": ">=18.0.0"
   },

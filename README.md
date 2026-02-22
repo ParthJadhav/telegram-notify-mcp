@@ -1,6 +1,6 @@
-# Telegram MCP
+# Telegram Notify MCP
 
-[![npm version](https://img.shields.io/npm/v/telegram-notify-mcp.svg)](https://www.npmjs.com/package/telegram-notify-mcp)
+[![npm version](https://img.shields.io/npm/v/@parthj/telegram-notify-mcp.svg)](https://www.npmjs.com/package/@parthj/telegram-notify-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A dead-simple [MCP](https://modelcontextprotocol.io) server with one job: **send AI agent progress back to you on Telegram.**
@@ -26,7 +26,7 @@ Find your bot on Telegram and send `/start`. This is required so the bot can dis
 #### Claude Code
 
 ```bash
-claude mcp add telegram -e TELEGRAM_BOT_TOKEN=your-token -e TELEGRAM_USERNAME=your-username -- npx telegram-notify-mcp
+claude mcp add telegram -e TELEGRAM_BOT_TOKEN=your-token -e TELEGRAM_USERNAME=your-username -- npx @parthj/telegram-notify-mcp
 ```
 
 #### Claude Desktop / Cursor / Windsurf
@@ -38,7 +38,7 @@ Add to your MCP config file:
   "mcpServers": {
     "telegram": {
       "command": "npx",
-      "args": ["-y", "telegram-notify-mcp"],
+      "args": ["-y", "@parthj/telegram-notify-mcp"],
       "env": {
         "TELEGRAM_BOT_TOKEN": "your-bot-token",
         "TELEGRAM_USERNAME": "your-telegram-username"
@@ -90,7 +90,9 @@ Send a file — a report, a log, a build artifact.
 
 ## How It Works
 
-On the first tool call, the server resolves your username to a chat ID via the Telegram Bot API's `getUpdates`. This is why sending `/start` to the bot is required — Telegram bots can only message users who have initiated a conversation. The chat ID is cached for the lifetime of the process.
+- On the first tool call, the server resolves your username to a chat ID via the Telegram Bot API's `getUpdates`
+- Sending `/start` to the bot is required — Telegram bots can only message users who have initiated a conversation
+- The chat ID is cached for the lifetime of the process
 
 ## Development
 

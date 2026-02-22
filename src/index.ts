@@ -21,7 +21,7 @@ if (!USERNAME) {
 const telegram = new TelegramClient(BOT_TOKEN, USERNAME);
 
 const server = new McpServer({
-  name: "telegram-notify-mcp",
+  name: "@parthj/telegram-notify-mcp",
   version: "1.0.0",
 });
 
