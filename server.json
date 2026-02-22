@@ -1,0 +1,29 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.ParthJadhav/telegram-notify-mcp",
+  "description": "Send Telegram notifications from AI agents — text, photos, and documents.",
+  "repository": {
+    "url": "https://github.com/ParthJadhav/telegram-notify-mcp",
+    "source": "github"
+  },
+  "version": "1.0.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@parthj/telegram-notify-mcp",
+      "version": "1.0.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "description": "Telegram Bot API token from BotFather",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true,
+          "name": "TELEGRAM_BOT_TOKEN"
+        }
+      ]
+    }
+  ]
+}

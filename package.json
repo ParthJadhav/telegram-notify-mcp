@@ -1,6 +1,7 @@
 {
   "name": "@parthj/telegram-notify-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
+  "mcpName": "io.github.ParthJadhav/telegram-notify-mcp",
   "description": "A dead-simple MCP server with one job: send AI agent progress back to you on Telegram — text, images, or files.",
   "type": "module",
   "main": "./build/index.js",
