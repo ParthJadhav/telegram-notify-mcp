@@ -1,7 +1,9 @@
-import { readFile } from "fs/promises";
-import { basename } from "path";
+import { readFile, stat } from "fs/promises";
+import { basename, resolve } from "path";
 
 const TELEGRAM_API = "https://api.telegram.org";
+
+type ParseMode = "HTML" | "Markdown" | "MarkdownV2";
 
 interface TelegramResponse {
   ok: boolean;
@@ -27,6 +29,7 @@ export class TelegramClient {
   private botToken: string;
   private targetUsername: string;
   private chatId: number | null = null;
+  private resolvingChatId: Promise<number> | null = null;
 
   constructor(botToken: string, targetUsername: string) {
     this.botToken = botToken;
@@ -47,6 +50,11 @@ export class TelegramClient {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
     });
+    if (!response.ok) {
+      throw new Error(
+        `Telegram API request failed with status ${response.status}`
+      );
+    }
     return (await response.json()) as TelegramResponse;
   }
 
@@ -58,6 +66,11 @@ export class TelegramClient {
       method: "POST",
       body: formData,
     });
+    if (!response.ok) {
+      throw new Error(
+        `Telegram API request failed with status ${response.status}`
+      );
+    }
     return (await response.json()) as TelegramResponse;
   }
 
@@ -66,7 +79,20 @@ export class TelegramClient {
       return this.chatId;
     }
 
-    // Try to find the chat_id by polling getUpdates
+    // Deduplicate concurrent resolution attempts
+    if (this.resolvingChatId !== null) {
+      return this.resolvingChatId;
+    }
+
+    this.resolvingChatId = this.fetchChatId();
+    try {
+      return await this.resolvingChatId;
+    } finally {
+      this.resolvingChatId = null;
+    }
+  }
+
+  private async fetchChatId(): Promise<number> {
     const response = await this.apiCall("getUpdates", { limit: 100 });
 
     if (!response.ok || !Array.isArray(response.result)) {
@@ -95,9 +121,57 @@ export class TelegramClient {
     );
   }
 
+  private async readLocalFile(filePath: string): Promise<{ blob: Blob; filename: string }> {
+    const resolved = resolve(filePath);
+    const fileStat = await stat(resolved);
+    if (!fileStat.isFile()) {
+      throw new Error(`Path is not a regular file: ${resolved}`);
+    }
+    const fileBuffer = await readFile(resolved);
+    return { blob: new Blob([fileBuffer]), filename: basename(resolved) };
+  }
+
+  private isUrl(value: string): boolean {
+    return value.startsWith("http://") || value.startsWith("https://");
+  }
+
+  private async sendFile(
+    method: string,
+    fileField: string,
+    fileSource: string,
+    caption?: string,
+    parseMode?: ParseMode
+  ): Promise<TelegramResponse> {
+    const chatId = await this.resolveChatId();
+
+    let result: TelegramResponse;
+
+    if (this.isUrl(fileSource)) {
+      const params: Record<string, unknown> = { chat_id: chatId, [fileField]: fileSource };
+      if (caption) params.caption = caption;
+      if (parseMode) params.parse_mode = parseMode;
+      result = await this.apiCall(method, params);
+    } else {
+      const { blob, filename } = await this.readLocalFile(fileSource);
+      const formData = new FormData();
+      formData.append("chat_id", String(chatId));
+      formData.append(fileField, blob, filename);
+      if (caption) formData.append("caption", caption);
+      if (parseMode) formData.append("parse_mode", parseMode);
+      result = await this.apiCallMultipart(method, formData);
+    }
+
+    if (!result.ok) {
+      throw new Error(
+        `Failed to ${method}: ${result.description ?? "Unknown error"}`
+      );
+    }
+    return result;
+  }
+
   async sendMessage(
     text: string,
-    parseMode?: string
+    parseMode?: ParseMode
   ): Promise<TelegramResponse> {
     const chatId = await this.resolveChatId();
     const params: Record<string, unknown> = { chat_id: chatId, text };
@@ -116,81 +190,16 @@ export class TelegramClient {
   async sendPhoto(
     photo: string,
     caption?: string,
-    parseMode?: string
+    parseMode?: ParseMode
   ): Promise<TelegramResponse> {
-    const chatId = await this.resolveChatId();
-
-    // If it looks like a URL, send as URL
-    if (photo.startsWith("http://") || photo.startsWith("https://")) {
-      const params: Record<string, unknown> = { chat_id: chatId, photo };
-      if (caption) params.caption = caption;
-      if (parseMode) params.parse_mode = parseMode;
-      const result = await this.apiCall("sendPhoto", params);
-      if (!result.ok) {
-        throw new Error(
-          `Failed to send photo: ${result.description ?? "Unknown error"}`
-        );
-      }
-      return result;
-    }
-
-    // Otherwise treat as a local file path — upload via multipart
-    const fileBuffer = await readFile(photo);
-    const blob = new Blob([fileBuffer]);
-    const formData = new FormData();
-    formData.append("chat_id", String(chatId));
-    formData.append("photo", blob, basename(photo));
-    if (caption) formData.append("caption", caption);
-    if (parseMode) formData.append("parse_mode", parseMode);
-
-    const result = await this.apiCallMultipart("sendPhoto", formData);
-    if (!result.ok) {
-      throw new Error(
-        `Failed to send photo: ${result.description ?? "Unknown error"}`
-      );
-    }
-    return result;
+    return this.sendFile("sendPhoto", "photo", photo, caption, parseMode);
   }
 
   async sendDocument(
     document: string,
     caption?: string,
-    parseMode?: string
+    parseMode?: ParseMode
   ): Promise<TelegramResponse> {
-    const chatId = await this.resolveChatId();
-
-    // If it looks like a URL, send as URL
-    if (document.startsWith("http://") || document.startsWith("https://")) {
-      const params: Record<string, unknown> = {
-        chat_id: chatId,
-        document,
-      };
-      if (caption) params.caption = caption;
-      if (parseMode) params.parse_mode = parseMode;
-      const result = await this.apiCall("sendDocument", params);
-      if (!result.ok) {
-        throw new Error(
-          `Failed to send document: ${result.description ?? "Unknown error"}`
-        );
-      }
-      return result;
-    }
-
-    // Otherwise treat as a local file path — upload via multipart
-    const fileBuffer = await readFile(document);
-    const blob = new Blob([fileBuffer]);
-    const formData = new FormData();
-    formData.append("chat_id", String(chatId));
-    formData.append("document", blob, basename(document));
-    if (caption) formData.append("caption", caption);
-    if (parseMode) formData.append("parse_mode", parseMode);
-
-    const result = await this.apiCallMultipart("sendDocument", formData);
-    if (!result.ok) {
-      throw new Error(
-        `Failed to send document: ${result.description ?? "Unknown error"}`
-      );
-    }
-    return result;
+    return this.sendFile("sendDocument", "document", document, caption, parseMode);
   }
 }

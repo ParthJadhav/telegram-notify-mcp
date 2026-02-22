@@ -1,15 +1,45 @@
 {
-  "name": "telegram-mcp",
+  "name": "telegram-notify-mcp",
   "version": "1.0.0",
-  "description": "MCP server for sending messages, images, and files to Telegram",
+  "description": "A dead-simple MCP server with one job: send AI agent progress back to you on Telegram — text, images, or files.",
   "type": "module",
+  "main": "./build/index.js",
   "bin": {
-    "telegram-mcp": "./build/index.js"
+    "telegram-notify-mcp": "./build/index.js"
   },
+  "files": [
+    "build",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "npm run build",
     "dev": "tsc --watch",
     "start": "node build/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "telegram",
+    "telegram-bot",
+    "ai-agents",
+    "notifications",
+    "claude",
+    "llm"
+  ],
+  "author": "Parth Jadhav",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ParthJadhav/telegram-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ParthJadhav/telegram-mcp/issues"
+  },
+  "homepage": "https://github.com/ParthJadhav/telegram-mcp#readme",
+  "engines": {
+    "node": ">=18.0.0"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
@@ -18,6 +48,5 @@
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^5.7.0"
-  },
-  "license": "MIT"
+  }
 }
